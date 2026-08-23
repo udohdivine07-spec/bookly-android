@@ -1,10 +1,12 @@
 {
   "name": "bookly-android",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
+  "description": "Bookly mobile booking app with customer and business experiences",
   "scripts": {
     "build:android": "npx cap sync android",
-    "android:add": "npx cap add android"
+    "android:add": "npx cap add android",
+    "backend:start": "node backend/server.js"
   },
   "dependencies": {
     "@capacitor/core": "^7.4.0",
