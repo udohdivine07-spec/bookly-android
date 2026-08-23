@@ -2,6 +2,8 @@ name: Build Bookly APK
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
 
 jobs:
   build:
@@ -15,6 +17,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
       - name: Install dependencies
         run: npm install
@@ -22,7 +25,7 @@ jobs:
       - name: Create web directory
         run: mkdir -p www
 
-      - name: Create placeholder page
+      - name: Create minimal web fallback
         run: |
           cat > www/index.html <<'EOF'
           <!doctype html>
@@ -32,12 +35,12 @@ jobs:
             <title>Bookly</title>
           </head>
           <body>
-            <h2>Bookly</h2>
+            <div id="root">Bookly</div>
           </body>
           </html>
           EOF
 
-      - name: Add Android
+      - name: Add Android platform
         run: npx cap add android
 
       - name: Sync Android
@@ -49,7 +52,7 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Build APK
+      - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug
 
@@ -58,3 +61,4 @@ jobs:
         with:
           name: bookly-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
