@@ -17,7 +17,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
 
       - name: Install dependencies
         run: npm install
@@ -25,7 +24,7 @@ jobs:
       - name: Create web directory
         run: mkdir -p www
 
-      - name: Create minimal web fallback
+      - name: Create web fallback
         run: |
           cat > www/index.html <<'EOF'
           <!doctype html>
@@ -34,9 +33,7 @@ jobs:
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>Bookly</title>
           </head>
-          <body>
-            <div id="root">Bookly</div>
-          </body>
+          <body><div id="root">Bookly</div></body>
           </html>
           EOF
 
