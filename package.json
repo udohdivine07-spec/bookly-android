@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build:android": "npx cap sync android"
+    "build:android": "npx cap sync android",
+    "android:add": "npx cap add android"
   },
   "dependencies": {
     "@capacitor/core": "^7.4.0",
