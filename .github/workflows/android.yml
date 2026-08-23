@@ -1,76 +1,35 @@
 name: Build Bookly APK
-
 on:
   push:
     branches: [main]
   workflow_dispatch:
-
-permissions:
-  contents: read
-
-env:
-  NODE_VERSION: '20'
-  JAVA_VERSION: '21'
-
 jobs:
   build:
-    name: Build Android APK
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-
     steps:
-      - name: Checkout Bookly
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Create Bookly web shell
-        run: |
-          rm -rf www
-          mkdir -p www
-          cat > www/index.html <<'EOF'
-          <!doctype html>
-          <html lang="en">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-            <meta name="theme-color" content="#ffffff">
-            <title>Bookly</title>
-          </head>
-          <body style="margin:0;background:#fff">
-            <script>
-              window.location.replace('https://bookly-edyd.hatchable.site/');
-            </script>
-          </body>
-          </html>
-          EOF
-
+          node-version: 20
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: ${{ env.JAVA_VERSION }}
-
-      - name: Add Android platform
+          java-version: '21'
+      - name: Install dependencies
+        run: npm install
+      - name: Create Android project
         run: npx cap add android
-
-      - name: Sync Capacitor Android project
+      - name: Sync Bookly into Android
         run: npx cap sync android
-
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
-
       - name: Upload Bookly APK
         uses: actions/upload-artifact@v4
         with:
           name: Bookly-Android-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-          retention-days: 14
