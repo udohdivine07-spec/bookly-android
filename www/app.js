@@ -1,173 +1,32 @@
-let currentRole=localStorage.getItem('booklyRole')||'';
-const screens=[...document.querySelectorAll('.screen')];
-let onboardIndex=0;
-
-function show(id){
-  const target=document.getElementById(id);
-  if(!target)return;
-  screens.forEach(s=>s.classList.toggle('active',s.id===id));
-  window.scrollTo(0,0);
-  document.documentElement.scrollTop=0;
-  document.body.scrollTop=0;
-  const app=document.getElementById('app');
-  if(app)app.scrollTop=0;
-}
-
-function nextOnboard(){
-  if(onboardIndex<2){setOnboard(onboardIndex+1);return;}
-  show('auth');
-}
+var currentRole=localStorage.getItem('booklyRole')||'';
+var onboardIndex=0;
+function $(id){return document.getElementById(id);}
+function show(id){var ss=document.querySelectorAll('.screen');for(var i=0;i<ss.length;i++)ss[i].classList.remove('active');var el=$(id);if(el)el.classList.add('active');window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0;}
+function setOnboard(n){onboardIndex=Math.max(0,Math.min(2,n));var s=document.querySelectorAll('.onboard-slide'),d=document.querySelectorAll('.onboard-dot');for(var i=0;i<s.length;i++)s[i].classList.toggle('active',i===onboardIndex);for(var j=0;j<d.length;j++)d[j].classList.toggle('on',j===onboardIndex);var b=$('onboardNext');if(b)b.innerHTML=onboardIndex===2?'Get started':'Next';}
+function nextOnboard(){if(onboardIndex<2)setOnboard(onboardIndex+1);else show('auth');}
 function skipOnboard(){show('auth');}
-function setOnboard(index){
-  onboardIndex=Math.max(0,Math.min(2,index));
-  const slides=document.querySelectorAll('.onboard-slide');
-  slides.forEach((s,i)=>s.classList.toggle('active',i===onboardIndex));
-  document.querySelectorAll('.onboard-dot').forEach((d,i)=>d.classList.toggle('on',i===onboardIndex));
-  const btn=document.getElementById('onboardNext');
-  if(btn)btn.textContent=onboardIndex===2?'Get started':'Next';
-}
-function enter(role){
-  currentRole=role;
-  localStorage.setItem('booklyRole',role);
-  const type=document.getElementById('profileType');
-  if(type)type.textContent=role==='seller'?'Business owner account':'Customer account';
-  const name=localStorage.getItem('booklyUserName')||'Divine Udoh';
-  const profileName=document.getElementById('profileName');
-  const profileEdit=document.getElementById('profileEditName');
-  const homeTitle=document.getElementById('homeTitle');
-  if(profileName)profileName.textContent=name;
-  if(profileEdit)profileEdit.value=name;
-  if(homeTitle)homeTitle.textContent=`Welcome back, ${name.split(' ')[0]} 👋`;
-  updateAvatar();
-  show(role==='seller'?'seller':'home');
-}
-function chooseLogin(){show('login');setTimeout(()=>document.getElementById('loginEmail')?.focus(),80);}
-function chooseSignup(){show('signup');setTimeout(()=>document.getElementById('signupName')?.focus(),80);}
+function chooseLogin(){show('login');}
+function chooseSignup(){show('signup');}
 function continueAsGuest(){show('role');}
-function validEmail(value){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);}
-function login(){
-  const name=document.getElementById('loginName');
-  const email=document.getElementById('loginEmail');
-  const password=document.getElementById('loginPassword');
-  const error=document.getElementById('loginError');
-  if(!email?.value.trim()||!validEmail(email.value.trim())){if(error)error.textContent='Enter a valid email address.';return;}
-  if(password && password.value.length<6){if(error)error.textContent='Password must be at least 6 characters.';return;}
-  localStorage.setItem('booklyUserName',name?.value.trim()||'Divine Udoh');
-  localStorage.setItem('booklyUserEmail',email.value.trim());
-  if(error)error.textContent='';
-  show('role');
-}
-function signup(){
-  const name=document.getElementById('signupName');
-  const email=document.getElementById('signupEmail');
-  const password=document.getElementById('signupPassword');
-  const error=document.getElementById('signupError');
-  if(!name?.value.trim()||!email?.value.trim()||!validEmail(email.value.trim())){if(error)error.textContent='Enter your name and a valid email address.';return;}
-  if(password && password.value.length<6){if(error)error.textContent='Password must be at least 6 characters.';return;}
-  localStorage.setItem('booklyUserName',name.value.trim());
-  localStorage.setItem('booklyUserEmail',email.value.trim());
-  if(error)error.textContent='';
-  show('role');
-}
-function book(name){
-  localStorage.setItem('booklyBooking',name);
-  const upcomingName=document.getElementById('upcomingName');
-  const upcomingDate=document.getElementById('upcomingDate');
-  const bookingLabel=document.getElementById('bookingLabel');
-  if(upcomingName)upcomingName.textContent=name;
-  if(upcomingDate)upcomingDate.textContent='Upcoming • Today at 10:30 AM';
-  if(bookingLabel)bookingLabel.textContent=name;
-  show('bookings');
-}
-function openSettings(){
-  const toggle=document.getElementById('themeToggle');
-  if(toggle)toggle.checked=localStorage.getItem('booklyTheme')==='dark';
-  show('settings');
-}
-function setTheme(dark){
-  document.body.classList.toggle('dark',dark);
-  localStorage.setItem('booklyTheme',dark?'dark':'light');
-  const toggle=document.getElementById('themeToggle');
-  if(toggle)toggle.checked=dark;
-}
-function toggleTheme(el){setTheme(!!el.checked);}
-function updateAvatar(){
-  const photo=localStorage.getItem('booklyProfilePhoto');
-  document.querySelectorAll('[data-avatar]').forEach(el=>{
-    if(photo){el.style.backgroundImage=`url(${photo})`;el.classList.add('photo-avatar');el.textContent='';}
-    else{el.style.backgroundImage='';el.classList.remove('photo-avatar');el.textContent=(localStorage.getItem('booklyUserName')||'Divine Udoh').split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase();}
-  });
-}
-function pickProfilePhoto(){document.getElementById('profilePhotoInput')?.click();}
-function saveProfilePhoto(input){
-  const file=input.files?.[0];
-  if(!file)return;
-  if(file.size>3*1024*1024){alert('Please choose a photo smaller than 3 MB.');return;}
-  const reader=new FileReader();
-  reader.onload=()=>{localStorage.setItem('booklyProfilePhoto',reader.result);updateAvatar();};
-  reader.readAsDataURL(file);
-}
-function saveProfile(){
-  const name=document.getElementById('profileEditName')?.value.trim();
-  if(name){localStorage.setItem('booklyUserName',name);document.getElementById('profileName').textContent=name;document.getElementById('homeTitle').textContent=`Welcome back, ${name.split(' ')[0]} 👋`;}
-  updateAvatar();
-  show(currentRole==='seller'?'seller':'home');
-}
-function logout(){
-  localStorage.removeItem('booklyRole');
-  localStorage.removeItem('booklyUserName');
-  localStorage.removeItem('booklyUserEmail');
-  currentRole='';
-  onboardIndex=0;
-  show('onboarding');
-  setOnboard(0);
-}
-
-function setupAuthFields(){
-  const login=document.getElementById('login');
-  const signup=document.getElementById('signup');
-  if(login && !document.getElementById('loginPassword')){
-    const input=document.createElement('input');input.id='loginPassword';input.type='password';input.placeholder='Password';input.autocomplete='current-password';
-    const label=document.createElement('label');label.textContent='Password';
-    const error=document.getElementById('loginError');login.insertBefore(label,error);login.insertBefore(input,error);
-  }
-  if(signup && !document.getElementById('signupPassword')){
-    const input=document.createElement('input');input.id='signupPassword';input.type='password';input.placeholder='At least 6 characters';input.autocomplete='new-password';
-    const label=document.createElement('label');label.textContent='Password';
-    const error=document.getElementById('signupError');signup.insertBefore(label,error);signup.insertBefore(input,error);
-  }
-}
-
-function setupOnboarding(){
-  const onboarding=document.getElementById('onboarding');
-  if(!onboarding)return;
-  onboarding.innerHTML=`
-    <div class="brand"><div class="logo-mark bookly-logo">B</div><span>Bookly</span></div>
-    <div class="onboard-carousel" id="onboardCarousel">
-      <div class="onboard-slide active"><div class="hero-logo"><div class="logo-mark big bookly-logo">B</div></div><h1>Everything you book.<br><b>One simple app.</b></h1><p>Book appointments, manage customers and keep track of your business in one place.</p></div>
-      <div class="onboard-slide"><div class="story-icon">📅</div><h1>Book in<br><b>seconds.</b></h1><p>Find great services, choose a time and keep every appointment organized.</p></div>
-      <div class="onboard-slide"><div class="story-icon">💰</div><h1>Grow your<br><b>business.</b></h1><p>Manage bookings, customers, revenue and profit from one beautiful dashboard.</p></div>
-    </div>
-    <div class="dots"><i class="onboard-dot on"></i><i class="onboard-dot"></i><i class="onboard-dot"></i></div>
-    <button class="primary" id="onboardNext">Next</button>
-    <button class="text-btn" id="onboardSkip">I already have an account</button>`;
-  document.getElementById('onboardNext').addEventListener('click',nextOnboard);
-  document.getElementById('onboardSkip').addEventListener('click',skipOnboard);
-  let startX=0,startY=0;
-  const carousel=document.getElementById('onboardCarousel');
-  carousel.addEventListener('touchstart',e=>{startX=e.changedTouches[0].clientX;startY=e.changedTouches[0].clientY;},{passive:true});
-  carousel.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-startX;const dy=e.changedTouches[0].clientY-startY;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){if(dx<0&&onboardIndex<2)setOnboard(onboardIndex+1);if(dx>0&&onboardIndex>0)setOnboard(onboardIndex-1);}}, {passive:true});
-  setOnboard(0);
-}
-
-window.addEventListener('load',()=>{
-  setupOnboarding();
-  setupAuthFields();
-  setTheme(localStorage.getItem('booklyTheme')==='dark');
-  const booking=localStorage.getItem('booklyBooking');
-  if(booking){const n=document.getElementById('upcomingName'),d=document.getElementById('upcomingDate'),b=document.getElementById('bookingLabel');if(n)n.textContent=booking;if(d)d.textContent='Upcoming • Today at 10:30 AM';if(b)b.textContent=booking;}
-  const savedName=localStorage.getItem('booklyUserName');
-  if(savedName){const n=document.getElementById('profileName'),h=document.getElementById('homeTitle'),p=document.getElementById('profileEditName');if(n)n.textContent=savedName;if(h)h.textContent=`Welcome back, ${savedName.split(' ')[0]} 👋`;if(p)p.value=savedName;}
-  updateAvatar();
-  if(currentRole)enter(currentRole);else show('onboarding');
-});
+function validEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);}
+function login(){var e=$('loginEmail'),p=$('loginPassword'),n=$('loginName'),err=$('loginError');if(!e||!validEmail(e.value.trim())){if(err)err.innerHTML='Enter a valid email address.';return;}if(p&&p.value.length<6){if(err)err.innerHTML='Password must be at least 6 characters.';return;}localStorage.setItem('booklyUserEmail',e.value.trim());localStorage.setItem('booklyUserName',(n&&n.value.trim())||'Bookly User');show('role');}
+function signup(){var n=$('signupName'),e=$('signupEmail'),p=$('signupPassword'),err=$('signupError');if(!n||!n.value.trim()||!e||!validEmail(e.value.trim())){if(err)err.innerHTML='Enter your name and a valid email address.';return;}if(p&&p.value.length<6){if(err)err.innerHTML='Password must be at least 6 characters.';return;}localStorage.setItem('booklyUserName',n.value.trim());localStorage.setItem('booklyUserEmail',e.value.trim());show('role');}
+function enter(role){currentRole=role;localStorage.setItem('booklyRole',role);var n=localStorage.getItem('booklyUserName')||'Bookly User';if($('profileName'))$('profileName').innerHTML=n;if($('profileEditName'))$('profileEditName').value=n;if($('profileType'))$('profileType').innerHTML=role==='seller'?'Business owner account':'Customer account';if($('homeTitle'))$('homeTitle').innerHTML='Welcome back, '+n.split(' ')[0]+' 👋';show(role==='seller'?'seller':'home');}
+function enterCustomer(){enter('customer');}function enterSeller(){enter('seller');}
+function book(n){localStorage.setItem('booklyBooking',n);if($('upcomingName'))$('upcomingName').innerHTML=n;if($('upcomingDate'))$('upcomingDate').innerHTML='Upcoming • Today at 10:30 AM';if($('bookingLabel'))$('bookingLabel').innerHTML=n;show('bookings');}
+function openSettings(){if($('themeToggle'))$('themeToggle').checked=localStorage.getItem('booklyTheme')==='dark';show('settings');}
+function setTheme(d){document.body.classList.toggle('dark',!!d);localStorage.setItem('booklyTheme',d?'dark':'light');if($('themeToggle'))$('themeToggle').checked=!!d;}
+function toggleTheme(x){setTheme(x.checked);}
+function pickProfilePhoto(){if($('profilePhotoInput'))$('profilePhotoInput').click();}
+function saveProfilePhoto(x){var f=x.files&&x.files[0];if(!f)return;if(f.size>3145728){alert('Please choose a photo smaller than 3 MB.');return;}var r=new FileReader();r.onload=function(){localStorage.setItem('booklyProfilePhoto',r.result);updateAvatar();};r.readAsDataURL(f);}
+function updateAvatar(){var photo=localStorage.getItem('booklyProfilePhoto'),name=localStorage.getItem('booklyUserName')||'Bookly User',a=document.querySelectorAll('[data-avatar]'),ini=name.split(' ').map(function(x){return x.charAt(0);}).slice(0,2).join('').toUpperCase();for(var i=0;i<a.length;i++){if(photo){a[i].style.backgroundImage='url("'+photo+'")';a[i].innerHTML='';}else{a[i].style.backgroundImage='';a[i].innerHTML=ini;}}}
+function saveProfile(){var n=$('profileEditName');if(n&&n.value.trim()){localStorage.setItem('booklyUserName',n.value.trim());}updateAvatar();show(currentRole==='seller'?'seller':'home');}
+function logout(){localStorage.removeItem('booklyRole');currentRole='';show('onboarding');setOnboard(0);}
+function setupOnboarding(){var o=$('onboarding');if(!o)return;o.innerHTML='<div class="brand"><div class="logo-mark bookly-logo">B</div><span>Bookly</span></div><div class="onboard-carousel" id="onboardCarousel"><div class="onboard-slide active"><div class="hero-logo"><div class="logo-mark big bookly-logo">B</div></div><h1>Everything you book.<br><b>One simple app.</b></h1><p>Book appointments, manage customers and keep track of your business in one place.</p></div><div class="onboard-slide"><div class="story-icon">📅</div><h1>Book in<br><b>seconds.</b></h1><p>Find great services, choose a time and keep every appointment organized.</p></div><div class="onboard-slide"><div class="story-icon">💰</div><h1>Grow your<br><b>business.</b></h1><p>Manage bookings, customers, revenue and profit from one beautiful dashboard.</p></div></div><div class="dots"><i class="onboard-dot on"></i><i class="onboard-dot"></i><i class="onboard-dot"></i></div><button class="primary" id="onboardNext" type="button">Next</button><button class="text-btn" id="onboardSkip" type="button">I already have an account</button>';$('onboardNext').onclick=function(){nextOnboard();};$('onboardSkip').onclick=function(){skipOnboard();};var c=$('onboardCarousel'),x=0,y=0;c.addEventListener('touchstart',function(e){x=e.changedTouches[0].clientX;y=e.changedTouches[0].clientY;},{passive:true});c.addEventListener('touchend',function(e){var dx=e.changedTouches[0].clientX-x,dy=e.changedTouches[0].clientY-y;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){if(dx<0)setOnboard(onboardIndex+1);else setOnboard(onboardIndex-1);}},{passive:true});setOnboard(0);}
+function setupPassword(id,errid,ph){if(!$(id)){var i=document.createElement('input');i.id=id;i.type='password';i.placeholder=ph;i.style.marginTop='8px';$(errid).parentNode.insertBefore(i,$(errid));}}
+window.onload=function(){setupOnboarding();setupPassword('loginPassword','loginError','Password');setupPassword('signupPassword','signupError','At least 6 characters');setTheme(localStorage.getItem('booklyTheme')==='dark');
+var b=$('login');if(b){var old=b.querySelector('.primary');if(old)old.onclick=function(){login();};}var s=$('signup');if(s){var sb=s.querySelector('.primary');if(sb)sb.onclick=function(){signup();};}
+var auth=$('auth');if(auth){var bs=auth.querySelectorAll('button');if(bs[0])bs[0].onclick=function(){chooseLogin();};if(bs[1])bs[1].onclick=function(){chooseSignup();};if(bs[2])bs[2].onclick=function(){continueAsGuest();};}
+var ls=$('login');if(ls){var links=ls.querySelectorAll('.text-btn');if(links[0])links[0].onclick=function(){chooseSignup();};}var sg=$('signup');if(sg){var links2=sg.querySelectorAll('.text-btn');if(links2[0])links2[0].onclick=function(){chooseLogin();};}
+var role=$('role');if(role){var cards=role.querySelectorAll('.role-card');if(cards[0])cards[0].onclick=function(){enterCustomer();};if(cards[1])cards[1].onclick=function(){enterSeller();};}
+updateAvatar();if(currentRole)enter(currentRole);else show('onboarding');};
