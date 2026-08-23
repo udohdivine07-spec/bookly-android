@@ -2,16 +2,13 @@ name: Build Bookly APK
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Bookly
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node
@@ -25,25 +22,25 @@ jobs:
       - name: Create web directory
         run: mkdir -p www
 
-      - name: Add Bookly entry page
+      - name: Create placeholder page
         run: |
           cat > www/index.html <<'EOF'
           <!doctype html>
           <html>
-            <head>
-              <meta name="viewport" content="width=device-width,initial-scale=1">
-              <title>Bookly</title>
-            </head>
-            <body>
-              <p>Loading Bookly...</p>
-            </body>
+          <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Bookly</title>
+          </head>
+          <body>
+            <h2>Bookly</h2>
+          </body>
           </html>
           EOF
 
-      - name: Add Android platform
+      - name: Add Android
         run: npx cap add android
 
-      - name: Sync Capacitor
+      - name: Sync Android
         run: npx cap sync android
 
       - name: Setup Java
@@ -58,9 +55,6 @@ jobs:
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
-        
-             - name: Upload APK
-        uses: actions/upload-artifact@v4
         with:
           name: bookly-apk
-          path: android/app/build/outputs/apk/debug/app
+          path: android/app/build/outputs/apk/debug/app-debug.apk
