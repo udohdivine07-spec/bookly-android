@@ -21,19 +21,22 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Create web directory
-        run: mkdir -p www
-
-      - name: Create web fallback
+      - name: Create Bookly web shell
         run: |
+          mkdir -p www
           cat > www/index.html <<'EOF'
           <!doctype html>
           <html>
           <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+            <meta name="theme-color" content="#ffffff">
             <title>Bookly</title>
           </head>
-          <body><div id="root">Bookly</div></body>
+          <body style="margin:0;background:#fff">
+            <script>
+              window.location.replace('https://bookly-edyd.hatchable.site/');
+            </script>
+          </body>
           </html>
           EOF
 
