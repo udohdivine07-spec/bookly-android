@@ -1,0 +1,60 @@
+name: Build Bookly APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Create web directory
+        run: mkdir -p www
+
+      - name: Create placeholder page
+        run: |
+          cat > www/index.html <<'EOF'
+          <!doctype html>
+          <html>
+          <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Bookly</title>
+          </head>
+          <body>
+            <h2>Bookly</h2>
+          </body>
+          </html>
+          EOF
+
+      - name: Add Android
+        run: npx cap add android
+
+      - name: Sync Android
+        run: npx cap sync android
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Build APK
+        working-directory: android
+        run: ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: bookly-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
