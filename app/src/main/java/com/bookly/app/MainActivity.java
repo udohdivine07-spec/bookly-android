@@ -10,7 +10,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
-    private static final String BOOKLY_URL = "https://bookly-zrnwq2.v2.appdeploy.ai/";
+    private static final String BOOKLY_URL = "file:///android_asset/www/index.html";
     private WebView webView;
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -24,17 +24,23 @@ public class MainActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
-        settings.setAllowFileAccess(false);
+        settings.setAllowFileAccess(true);
+        settings.setAllowContentAccess(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
         settings.setSupportZoom(false);
+        settings.setLoadWithOverviewMode(false);
+        settings.setUseWideViewPort(false);
 
         webView.setWebChromeClient(new WebChromeClient());
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                view.loadUrl(request.getUrl().toString());
+                String url = request.getUrl().toString();
+                if (url.startsWith("file:///android_asset/")) {
+                    return false;
+                }
                 return true;
             }
         });
