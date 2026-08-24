@@ -1,19 +1,9 @@
 {
-  "name": "bookly-android",
-  "version": "2.0.0",
-  "private": true,
-  "description": "Bookly mobile booking app with customer and business experiences",
-  "scripts": {
-    "build:android": "npx cap sync android",
-    "android:add": "npx cap add android",
-    "backend:start": "node backend/server.js"
-  },
-  "dependencies": {
-    "@capacitor/core": "^7.4.0",
-    "@capacitor/android": "^7.4.0",
-    "@capacitor/cli": "^7.4.0"
-  },
-  "devDependencies": {
-    "typescript": "^5.8.3"
-  }
+  "name":"bookly-android",
+  "version":"3.0.0",
+  "private":true,
+  "description":"Standalone Bookly Android booking marketplace with customer and provider workspaces",
+  "scripts":{"build:android":"./gradlew assembleDebug","backend:start":"node backend/server.js"},
+  "dependencies":{"@capacitor/core":"^7.4.0","@capacitor/android":"^7.4.0","@capacitor/cli":"^7.4.0"},
+  "devDependencies":{"typescript":"^5.8.3"}
 }
