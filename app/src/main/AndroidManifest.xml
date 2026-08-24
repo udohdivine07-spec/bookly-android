@@ -4,6 +4,8 @@
     <application
         android:theme="@style/Theme.Bookly"
         android:label="Bookly"
+        android:icon="@drawable/bookly_icon"
+        android:roundIcon="@drawable/bookly_icon"
         android:allowBackup="true"
         android:supportsRtl="true">
         <activity
