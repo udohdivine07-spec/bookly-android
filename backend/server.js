@@ -1,33 +1,27 @@
-const http = require('http');
-const crypto = require('crypto');
-const PORT = process.env.PORT || 8787;
-const users = new Map();
-const bookings = [];
-const expenses = [];
-const json = value => JSON.stringify(value);
-function send(res, status, body) {
-  res.writeHead(status, {'Content-Type':'application/json; charset=utf-8','Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Content-Type','Access-Control-Allow-Methods':'GET,POST,OPTIONS'});
-  res.end(json(body));
-}
-function readBody(req){return new Promise((resolve,reject)=>{let data='';req.on('data',c=>data+=c);req.on('end',()=>{try{resolve(data?JSON.parse(data):{})}catch(e){reject(e)}})})}
-const server=http.createServer(async (req,res)=>{
-  if(req.method==='OPTIONS'){res.writeHead(204,{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Content-Type','Access-Control-Allow-Methods':'GET,POST,OPTIONS'});return res.end();}
-  try{
-    if(req.url==='/api/health' && req.method==='GET') return send(res,200,{ok:true,service:'bookly-api',version:'1.0'});
-    if(req.url==='/api/auth/signup' && req.method==='POST'){
-      const b=await readBody(req); if(!b.email||!b.name||!b.password) return send(res,400,{error:'name, email and password are required'});
-      const email=b.email.toLowerCase(); if(users.has(email)) return send(res,409,{error:'account already exists'});
-      const user={id:crypto.randomUUID(),name:b.name,email,role:b.role||'customer',brandName:b.brandName||'',avatar:b.avatar||null}; users.set(email,{...user,password:b.password}); return send(res,201,{user,token:crypto.randomUUID()});
-    }
-    if(req.url==='/api/auth/login' && req.method==='POST'){
-      const b=await readBody(req); const u=users.get((b.email||'').toLowerCase()); if(!u||u.password!==b.password) return send(res,401,{error:'invalid email or password'}); const {password,...user}=u; return send(res,200,{user,token:crypto.randomUUID()});
-    }
-    if(req.url==='/api/bookings' && req.method==='GET') return send(res,200,{bookings});
-    if(req.url==='/api/bookings' && req.method==='POST'){const b=await readBody(req);const item={id:crypto.randomUUID(),...b,status:'confirmed',createdAt:new Date().toISOString()};bookings.push(item);return send(res,201,item);}
-    if(req.url==='/api/expenses' && req.method==='GET') return send(res,200,{expenses});
-    if(req.url==='/api/expenses' && req.method==='POST'){const b=await readBody(req);const item={id:crypto.randomUUID(),...b,createdAt:new Date().toISOString()};expenses.push(item);return send(res,201,item);}
-    if(req.url==='/api/dashboard' && req.method==='GET') return send(res,200,{revenue:248500,expenses:167300,profit:81200,bookings:bookings.length||42,customers:31});
-    return send(res,404,{error:'route not found'});
-  }catch(e){return send(res,500,{error:'server error'});}
-});
-server.listen(PORT,()=>console.log(`Bookly API listening on ${PORT}`));
+const http=require('http');const crypto=require('crypto');const fs=require('fs');const path=require('path');
+const PORT=process.env.PORT||8787;const DB=path.join(__dirname,'bookly-data.json');
+const seed={users:[],profiles:[],providers:[{id:'p1',name:'Luxe Beauty Studio',owner:'Amaka Okafor',cat:'Hair & Beauty',city:'Uyo',rating:4.9,reviews:128,services:[{id:'luxe-1',name:'Signature Hair Styling',price:18000,duration:90},{id:'luxe-2',name:'Wig Installation',price:25000,duration:120}]},{id:'p2',name:'Ink District Uyo',owner:'Divine Arts',cat:'Tattoo',city:'Uyo',rating:4.8,reviews:76,services:[{id:'ink-1',name:'Custom Tattoo Session',price:30000,duration:120},{id:'ink-2',name:'Temporary Tattoo',price:8000,duration:45}]}],bookings:[],expenses:[],messages:[]};
+let db=fs.existsSync(DB)?JSON.parse(fs.readFileSync(DB,'utf8')):seed;const persist=()=>fs.writeFileSync(DB,JSON.stringify(db,null,2));const json=x=>JSON.stringify(x);const id=()=>crypto.randomUUID();
+function send(res,status,body){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Content-Type, Authorization','Access-Control-Allow-Methods':'GET,POST,PUT,DELETE,OPTIONS'});res.end(json(body))}
+function body(req){return new Promise((ok,bad)=>{let x='';req.on('data',c=>x+=c);req.on('end',()=>{try{ok(x?JSON.parse(x):{})}catch(e){bad(e)}})})}
+function token(req){return (req.headers.authorization||'').replace(/^Bearer\s+/,'')}
+const sessions=new Map();const user=req=>sessions.get(token(req));const requireUser=(req,res)=>{const u=user(req);if(!u){send(res,401,{error:'Authentication required'});return null}return u};
+function route(req){return new URL(req.url,'http://bookly').pathname}
+async function main(req,res){if(req.method==='OPTIONS')return send(res,204,{});try{const r=route(req),b=req.method==='GET'?{}:await body(req);
+if(r==='/api/health'&&req.method==='GET')return send(res,200,{ok:true,service:'bookly-api',version:'2.0'});
+if(r==='/api/auth/signup'&&req.method==='POST'){const email=String(b.email||'').toLowerCase().trim();if(!email||!b.name||!b.password)return send(res,400,{error:'name, email and password are required'});if(db.users.some(x=>x.email===email))return send(res,409,{error:'account already exists'});const u={id:id(),name:String(b.name),email,password:String(b.password),role:b.role||null};db.users.push(u);db.profiles.push({id:id(),userId:u.id,name:u.name,email:u.email,role:u.role});const t=id();sessions.set(t,u);persist();const safe={...u};delete safe.password;return send(res,201,{user:safe,token:t})}
+if(r==='/api/auth/login'&&req.method==='POST'){const email=String(b.email||'').toLowerCase().trim(),u=db.users.find(x=>x.email===email&&x.password===String(b.password||''));if(!u)return send(res,401,{error:'invalid email or password'});const t=id();sessions.set(t,u);const safe={...u};delete safe.password;return send(res,200,{user:safe,token:t})}
+if(r==='/api/providers'&&req.method==='GET'){const q=String(new URL(req.url,'http://bookly').searchParams.get('q')||'').toLowerCase();let items=db.providers;if(q)items=items.filter(p=>(p.name+' '+p.cat+' '+p.city+' '+(p.services||[]).map(x=>x.name).join(' ')).toLowerCase().includes(q));return send(res,200,{providers:items})}
+if(r==='/api/me'&&req.method==='GET'){const u=requireUser(req,res);if(!u)return;return send(res,200,{profile:db.profiles.find(x=>x.userId===u.id)||null})}
+if(r==='/api/profile'&&req.method==='POST'){const u=requireUser(req,res);if(!u)return;const p=db.profiles.find(x=>x.userId===u.id);const next={...(p||{}),...b,id:p?.id||id(),userId:u.id,email:u.email};if(!['customer','provider'].includes(String(next.role)))return send(res,400,{error:'Choose Customer or Service Provider'});if(p)Object.assign(p,next);else db.profiles.push(next);Object.assign(u,{name:next.name,role:next.role});if(next.role==='provider'){let pr=db.providers.find(x=>x.ownerId===u.id);if(!pr){pr={id:id(),ownerId:u.id,name:next.businessName||'Your business',owner:next.name,cat:next.category||'Other Services',city:next.city||'',rating:5,reviews:0,services:[]};db.providers.push(pr)}else Object.assign(pr,{name:next.businessName||pr.name,owner:next.name,cat:next.category||pr.cat,city:next.city||pr.city})}persist();return send(res,200,{profile:next})}
+if(r==='/api/bookings'&&req.method==='GET'){const u=requireUser(req,res);if(!u)return;const p=db.profiles.find(x=>x.userId===u.id);const list=p?.role==='provider'?db.bookings.filter(x=>x.providerOwnerId===u.id):db.bookings.filter(x=>x.customerId===u.id);return send(res,200,{bookings:list})}
+if(r==='/api/bookings'&&req.method==='POST'){const u=requireUser(req,res);if(!u)return;if(!b.date||!b.time)return send(res,400,{error:'Date and time are required'});const item={id:id(),...b,customerId:u.id,customerName:b.customerName||u.name,status:b.status||'pending',createdAt:new Date().toISOString()};db.bookings.unshift(item);persist();return send(res,201,{booking:item})}
+if(r.startsWith('/api/bookings/')&&r.endsWith('/decision')&&req.method==='POST'){const u=requireUser(req,res);if(!u)return;const bid=r.split('/')[3],bk=db.bookings.find(x=>x.id===bid);if(!bk)return send(res,404,{error:'Booking not found'});if(bk.providerOwnerId!==u.id)return send(res,403,{error:'Only the provider can decide this booking'});if(!['approved','declined'].includes(b.decision))return send(res,400,{error:'Choose approve or decline'});bk.status=b.decision;bk.declineReason=b.decision==='declined'?String(b.reason||''):'';bk.statusUpdatedAt=new Date().toISOString();persist();return send(res,200,{booking:bk})}
+if(r.startsWith('/api/bookings/')&&req.method==='PUT'){const u=requireUser(req,res);if(!u)return;const bid=r.split('/')[3],bk=db.bookings.find(x=>x.id===bid);if(!bk)return send(res,404,{error:'Booking not found'});if(bk.providerOwnerId!==u.id&&bk.customerId!==u.id)return send(res,403,{error:'Forbidden'});Object.assign(bk,b);persist();return send(res,200,{booking:bk})}
+if(r==='/api/expenses'&&req.method==='GET'){const u=requireUser(req,res);if(!u)return;return send(res,200,{expenses:db.expenses.filter(x=>x.ownerId===u.id)})}
+if(r==='/api/expenses'&&req.method==='POST'){const u=requireUser(req,res);if(!u)return;const e={id:id(),ownerId:u.id,...b,createdAt:new Date().toISOString()};db.expenses.push(e);persist();return send(res,201,{expense:e})}
+if(r==='/api/messages'&&req.method==='GET'){const u=requireUser(req,res);if(!u)return;return send(res,200,{messages:db.messages.filter(x=>x.senderId===u.id||x.recipientId===u.id)})}
+if(r==='/api/messages'&&req.method==='POST'){const u=requireUser(req,res);if(!u)return;if(!b.text)return send(res,400,{error:'Message is required'});const m={id:id(),senderId:u.id,...b,createdAt:new Date().toISOString()};db.messages.push(m);persist();return send(res,201,{message:m})}
+if(r==='/api/dashboard'&&req.method==='GET'){const u=requireUser(req,res);if(!u)return;const bs=db.bookings.filter(x=>x.providerOwnerId===u.id),es=db.expenses.filter(x=>x.ownerId===u.id),revenue=bs.filter(x=>['approved','completed'].includes(x.status)).reduce((n,x)=>n+Number(x.price||0),0),expenses=es.reduce((n,x)=>n+Number(x.amount||0),0);return send(res,200,{revenue,expenses,profit:revenue-expenses,bookings:bs.length,customers:new Set(bs.map(x=>x.customerId)).size})}
+return send(res,404,{error:'route not found'})}catch(e){console.error(e);return send(res,500,{error:'server error'})}}
+http.createServer(main).listen(PORT,()=>console.log(`Bookly API listening on ${PORT}`));
