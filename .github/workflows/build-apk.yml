@@ -15,33 +15,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install frontend dependencies
-        run: npm install
-
-      - name: Verify standalone runtime
+      - name: Verify standalone Bookly files
         run: |
-          if grep -RInE '@appdeploy|appdeploy|localhost:4000|localhost:[0-9]+' src app www 2>/dev/null; then
-            echo 'Standalone build contains a forbidden AppDeploy/localhost runtime dependency.'
+          test -f www/index.html
+          test -f www/app.js
+          if grep -RInE 'appdeploy|localhost:[0-9]+' www 2>/dev/null; then
+            echo 'Standalone APK contains an AppDeploy/localhost runtime dependency.'
             exit 1
           fi
-
-      - name: Build Bookly frontend
-        run: npm run build
-
-      - name: Verify frontend output
-        run: test -f dist/index.html
-
-      - name: Copy frontend into Android assets
-        run: |
-          rm -rf www
-          cp -R dist www
-          test -f www/index.html
 
       - name: Set up Java
         uses: actions/setup-java@v4
