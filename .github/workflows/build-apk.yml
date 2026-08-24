@@ -14,15 +14,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
         with:
-          node-version: '20'
-          cache: npm
-      - name: Install dependencies
-        run: npm install
+          gradle-version: '8.10'
       - name: Build standalone Bookly APK
-        run: ./gradlew assembleDebug
+        run: gradle assembleDebug --no-daemon
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
