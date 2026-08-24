@@ -3,16 +3,14 @@ package com.bookly.app;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.os.Bundle;
-import android.view.View;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.Toast;
 
 public class MainActivity extends Activity {
-    private static final String BOOKLY_URL = "https://bookly-edyd.hatchable.site/";
+    private static final String BOOKLY_URL = "https://bookly-zrnwq2.v2.appdeploy.ai/";
     private WebView webView;
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -30,6 +28,7 @@ public class MainActivity extends Activity {
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
+        settings.setSupportZoom(false);
 
         webView.setWebChromeClient(new WebChromeClient());
         webView.setWebViewClient(new WebViewClient() {
