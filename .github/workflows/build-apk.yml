@@ -9,6 +9,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install frontend dependencies
+        run: npm install
+      - name: Build Bookly frontend
+        run: npm run build
+      - name: Copy frontend into Android assets
+        run: rm -rf www && cp -R dist www
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
