@@ -1,38 +1,70 @@
 name: Build Bookly APK
+
 on:
   workflow_dispatch:
   push:
     branches: [main]
+
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
+
       - name: Install frontend dependencies
         run: npm install
+
+      - name: Verify standalone runtime
+        run: |
+          if grep -RInE '@appdeploy|appdeploy|localhost:4000|localhost:[0-9]+' src app www 2>/dev/null; then
+            echo 'Standalone build contains a forbidden AppDeploy/localhost runtime dependency.'
+            exit 1
+          fi
+
       - name: Build Bookly frontend
         run: npm run build
+
+      - name: Verify frontend output
+        run: test -f dist/index.html
+
       - name: Copy frontend into Android assets
-        run: rm -rf www && cp -R dist www
+        run: |
+          rm -rf www
+          cp -R dist www
+          test -f www/index.html
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10'
+
       - name: Build standalone Bookly APK
         run: gradle assembleDebug --no-daemon
+
+      - name: Verify APK
+        run: |
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          ls -lh app/build/outputs/apk/debug/app-debug.apk
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: bookly-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
