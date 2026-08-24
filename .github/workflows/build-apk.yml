@@ -21,13 +21,10 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm install
-      - name: Sync Capacitor assets
-        run: npx cap sync android
-      - name: Build debug APK
-        working-directory: android
+      - name: Build standalone Bookly APK
         run: ./gradlew assembleDebug
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: bookly-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/debug/app-debug.apk
